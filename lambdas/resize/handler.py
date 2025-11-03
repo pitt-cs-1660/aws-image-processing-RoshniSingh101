@@ -1,7 +1,7 @@
 import json
-from PIL import Image # pyright: ignore[reportMissingImports]
+from PIL import Image
 import io
-import boto3 # pyright: ignore[reportMissingImports]
+import boto3 
 from pathlib import Path
 
 def download_from_s3(bucket, key):
