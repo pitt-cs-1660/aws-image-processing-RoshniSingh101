@@ -31,6 +31,15 @@ def exif_handler(event, context):
     processed_count = 0
     failed_count = 0
 
+    # --- 1. Hard-coded settings ---
+    # To use a different bucket, set this to a string: "my-target-bucket-name"
+    target_bucket = None 
+    # The S3 "folder" to put the extracted .json files in.
+    target_prefix = 'exif' 
+
+    if target_prefix and not target_prefix.endswith('/'):
+        target_prefix += '/'
+
     # iterate over all SNS records
     for sns_record in event.get('Records', []):
         try:
@@ -46,11 +55,47 @@ def exif_handler(event, context):
 
                     print(f"Processing: s3://{bucket_name}/{object_key}")
 
-                    ######
-                    #
-                    #  TODO: add exif lambda code here
-                    #
-                    ######
+                    # exif lambda code
+                    # Check file extension to ensure we only process images
+                    file_extension = Path(object_key).suffix.lower()
+                    if file_extension not in ['.jpg', '.jpeg', '.tif', '.tiff']:
+                        print(f"Skipping non-image file: {object_key}")
+                        continue  # Go to the next s3_event
+
+                    # --- 3. Download the image ---
+                    image = download_from_s3(bucket_name, object_key)
+
+                    # --- 4. Extract and clean EXIF data ---
+                    raw_exif = image._getexif()
+                    exif_data_clean = {}
+
+                    if raw_exif:
+                        for tag_id, value in raw_exif.items():
+                            # Get human-readable tag name
+                            tag_name = Image.ExifTags.TAGS.get(tag_id, tag_id)
+                            
+                            # Clean data to be JSON serializable
+                            if isinstance(value, bytes):
+                                clean_value = value.decode('utf-8', 'ignore')
+                            # Convert other complex types to string
+                            elif not isinstance(value, (str, int, float, bool, type(None))):
+                                clean_value = str(value)
+                            else:
+                                clean_value = value
+                            
+                            exif_data_clean[tag_name] = clean_value
+                    else:
+                        print(f"No EXIF data found for {object_key}")
+
+                    # --- 5. Define new key and upload JSON ---
+                    p = Path(object_key)
+                    # New key is 'exif/filename.json'
+                    new_key = f"{target_prefix}{p.stem}.json"
+                    
+                    json_data = json.dumps(exif_data_clean, indent=2)
+
+                    upload_to_s3(target_bucket, new_key, json_data, content_type='application/json')
+                    
 
                     processed_count += 1
 

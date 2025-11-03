@@ -1,7 +1,7 @@
 import json
-from PIL import Image
+from PIL import Image # pyright: ignore[reportMissingImports]
 import io
-import boto3
+import boto3 # pyright: ignore[reportMissingImports]
 from pathlib import Path
 
 def download_from_s3(bucket, key):
@@ -46,11 +46,37 @@ def resize_handler(event, context):
 
                     print(f"Processing: s3://{bucket_name}/{object_key}")
 
-                    ######
-                    #
-                    #  TODO: add resize lambda code here
-                    #
-                    ######
+                    # resize lambda code here
+                    # 1. Define target size and location
+                    target_size = (200, 200)  # Desired thumbnail size (width, height)
+                    source_path = Path(object_key)
+                    
+                    # Store thumbnails in a 'thumbnails/' prefix with the same filename
+                    # e.g., 'uploads/image.jpg' -> 'thumbnails/image.jpg'
+                    target_key = f"thumbnails/{source_path.name}"
+                    target_bucket = bucket_name
+
+                    # 2. CRITICAL: Prevent infinite loops
+                    # If the event is for a file *already* in the thumbnails dir, skip it.
+                    if object_key.startswith('thumbnails/'):
+                        print(f"Skipping already processed file: {object_key}")
+                        continue  # Move to the next S3 record
+
+                    # 3. Download the original image
+                    print(f"Downloading s3://{bucket_name}/{object_key}...")
+                    image = download_from_s3(bucket_name, object_key)
+                    print(f"Original size: {image.size}")
+
+                    # 4. Resize the image
+                    # We use .thumbnail() to maintain aspect ratio.
+                    # It resizes the image *in-place* to fit *within* the target_size.
+                    image.thumbnail(target_size, Image.Resampling.LANCZOS)
+                    print(f"New size: {image.size}")
+
+                    # 5. Upload the new thumbnail image
+                    print(f"Uploading to s3://{target_bucket}/{target_key}...")
+                    upload_to_s3(target_bucket, target_key, image)
+                    print("Upload complete.")
 
                     processed_count += 1
 

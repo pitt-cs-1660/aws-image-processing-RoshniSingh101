@@ -46,11 +46,33 @@ def greyscale_handler(event, context):
 
                     print(f"Processing: s3://{bucket_name}/{object_key}")
 
-                    ######
-                    #
-                    #  TODO: add greyscale lambda code here
-                    #
-                    ######
+                    # add greyscale lambda code here
+                    # Use Pathlib to easily manage paths
+                    original_path = Path(object_key)
+
+                    # 1. Prevent infinite loops by checking if already processed
+                    # If the first part of the path is 'greyscale', skip it.
+                    if original_path.parts and original_path.parts[0] == 'greyscale':
+                        print(f"Skipping already processed file: {object_key}")
+                        continue # Move to the next s3_event
+
+                    # 2. Download Image
+                    print(f"Downloading {object_key}...")
+                    image = download_from_s3(bucket_name, object_key)
+
+                    # 3. Convert to Greyscale
+                    print(f"Converting {object_key} to greyscale...")
+                    greyscale_image = image.convert('L') # 'L' mode is for 8-bit greyscale
+
+                    # 4. Define Destination
+                    # We'll save to the same bucket, but in a 'greyscale/' prefix
+                    destination_key = f"greyscale/{original_path.name}"
+                    
+                    # 5. Upload Processed Image
+                    print(f"Uploading to s3://{bucket_name}/{destination_key}")
+                    upload_to_s3(bucket_name, destination_key, greyscale_image, content_type='image/jpeg')
+
+                    print(f"Successfully processed {object_key}")
 
                     processed_count += 1
 
