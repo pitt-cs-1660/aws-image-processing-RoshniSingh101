@@ -6,7 +6,12 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # copy requirements file
 COPY pyproject.toml ${LAMBDA_TASK_ROOT}/
 
+# RUNS uv to install packages
+RUN /bin/uv venv ${LAMBDA_TASK_ROOT}/.venv && \
+    /bin/uv pip install -p ${LAMBDA_TASK_ROOT}/pyproject.toml --no-cache-dir
+
 # the rest of your Dockerfile
+COPY handler.py ${LAMBDA_TASK_ROOT}/
 
 # set PYTHONPATH to include the virtual environment site-packages
 ENV PYTHONPATH="${LAMBDA_TASK_ROOT}/.venv/lib/python3.13/site-packages"
