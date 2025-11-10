@@ -1,44 +1,60 @@
-FROM public.ecr.aws/lambda/python:3.13 AS builder
+FROM public.ecr.aws/lambda/python:3.13
 
 # install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# rest of the image implemented
+# copy requirements file
+COPY pyproject.toml ${LAMBDA_TASK_ROOT}/
 
-WORKDIR /aws-image-processing-RoshniSingh101/lambdas/greyscale
+# the rest of your Dockerfile
 
-# copy dependency files first (for better caching)
-COPY pyproject.toml ./
+# set PYTHONPATH to include the virtual environment site-packages
+ENV PYTHONPATH="${LAMBDA_TASK_ROOT}/.venv/lib/python3.13/site-packages"
 
-RUN uv venv
+# set the CMD to your handler
+CMD [ "handler.greyscale_handler"]
 
-# install dependencies without the project itself
-RUN uv sync --no-install-project --no-editable
+# FROM public.ecr.aws/lambda/python:3.13 AS builder
 
-# Copy source code
-COPY . .
+# # install uv
+# COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# install the complete project
-RUN uv sync --no-editable
+# # rest of the image implemented
 
-# final stage - runtime environment
-FROM public.ecr.aws/lambda/python:3.13
+# WORKDIR /aws-image-processing-RoshniSingh101/lambdas/greyscale
 
-# install uvicorn directly if it's not in dependencies
-RUN pip install uvicorn
+# # copy dependency files first (for better caching)
+# COPY pyproject.toml ./
 
-# set up virtual environment variables
-ENV VIRTUAL_ENV=/aws-image-processing-RoshniSingh101/lambdas/greyscale/.venv
-ENV PATH="/aws-image-processing-RoshniSingh101/lambdas/greyscale/.venv/bin:$PATH"
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# RUN uv venv
 
-# set working directory
-WORKDIR /aws-image-processing-RoshniSingh101/lambdas/greyscale
+# # install dependencies without the project itself
+# RUN uv sync --no-install-project --no-editable
 
-# copy the virtual environment from builder
-COPY --from=builder /aws-image-processing-RoshniSingh101/lambdas/greyscale/ /aws-image-processing-RoshniSingh101/lambdas/greyscale/
+# # Copy source code
+# COPY . .
 
-EXPOSE 8000
+# # install the complete project
+# RUN uv sync --no-editable
 
-CMD ["handler.handler"]
+# # final stage - runtime environment
+# FROM public.ecr.aws/lambda/python:3.13
+
+# # install uvicorn directly if it's not in dependencies
+# RUN pip install uvicorn
+
+# # set up virtual environment variables
+# ENV VIRTUAL_ENV=/aws-image-processing-RoshniSingh101/lambdas/greyscale/.venv
+# ENV PATH="/aws-image-processing-RoshniSingh101/lambdas/greyscale/.venv/bin:$PATH"
+# ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+
+# # set working directory
+# WORKDIR /aws-image-processing-RoshniSingh101/lambdas/greyscale
+
+# # copy the virtual environment from builder
+# COPY --from=builder /aws-image-processing-RoshniSingh101/lambdas/greyscale/ /aws-image-processing-RoshniSingh101/lambdas/greyscale/
+
+# EXPOSE 8000
+
+# CMD ["handler.handler"]
 
