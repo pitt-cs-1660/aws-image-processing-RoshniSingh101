@@ -51,8 +51,8 @@ def greyscale_handler(event, context):
                     original_path = Path(object_key)
 
                     # 1. Prevent infinite loops by checking if already processed
-                    # If the first part of the path is 'greyscale', skip it.
-                    if original_path.parts and original_path.parts[0] == 'greyscale':
+                    # If the first part of the path is 'processed', skip it.
+                    if original_path.parts and original_path.parts[0] == 'processed':
                         print(f"Skipping already processed file: {object_key}")
                         continue # Move to the next s3_event
 
@@ -65,8 +65,8 @@ def greyscale_handler(event, context):
                     greyscale_image = image.convert('L') # 'L' mode is for 8-bit greyscale
 
                     # 4. Define Destination
-                    # We'll save to the same bucket, but in a 'greyscale/' prefix
-                    destination_key = f"greyscale/{original_path.name}"
+                    # We'll save to the same bucket, but in a 'processed/' prefix
+                    destination_key = f"processed/{object_key}"
                     
                     # 5. Upload Processed Image
                     print(f"Uploading to s3://{bucket_name}/{destination_key}")

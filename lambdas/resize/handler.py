@@ -49,16 +49,14 @@ def resize_handler(event, context):
                     # resize lambda code here
                     # 1. Define target size and location
                     target_size = (200, 200)  # Desired thumbnail size (width, height)
-                    source_path = Path(object_key)
                     
-                    # Store thumbnails in a 'thumbnails/' prefix with the same filename
-                    # e.g., 'uploads/image.jpg' -> 'thumbnails/image.jpg'
-                    target_key = f"thumbnails/{source_path.name}"
+                    # Store processed in a 'processed/' prefix with the same filename
+                    target_key = f"processed/{object_key}"
                     target_bucket = bucket_name
 
                     # 2. CRITICAL: Prevent infinite loops
-                    # If the event is for a file *already* in the thumbnails dir, skip it.
-                    if object_key.startswith('thumbnails/'):
+                    # If the event is for a file *already* in the processed dir, skip it.
+                    if object_key.startswith('processed/'):
                         print(f"Skipping already processed file: {object_key}")
                         continue  # Move to the next S3 record
 
