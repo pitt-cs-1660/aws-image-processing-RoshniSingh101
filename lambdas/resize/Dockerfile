@@ -3,12 +3,7 @@ FROM public.ecr.aws/lambda/python:3.13 AS builder
 # install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-############
-#
-# TODO: implement the rest of the image
-#
-############
-
+# rest of the image implemented
 
 WORKDIR /aws-image-processing-RoshniSingh101/lambdas/resize
 
